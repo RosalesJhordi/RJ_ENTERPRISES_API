@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     //  Funcion Registro
-    public function regsitro(Request $request){
+    public function registro(Request $request){
 
         //Validar los datos obtenidos
         $validacion = Validator::make($request->all(),[
@@ -34,11 +34,48 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password)
         ]);
+        
+        //Generar token PAT con laravel SANCTUM
+        $token = $user->createToken('auth_token')->plainTextToken;
+        $user = User::where('email', $request->email)->first();
+        $userId = $user->id;
+        $accessToken = User::find($userId)->tokens()->where('name', 'auth_token')->pluck('token')->first();
+        
 
-        //Respuesta JSON si todo sale coreecto
-
+        //Retornar los datos de usuario y el token de acceso
         return response()->json([
-            'user' => $user
+            'user' => $user,
+            'token' => $accessToken
         ]);
+    }
+
+    //funcion autenticacion de usuarios
+    public function login(Request $request){
+         // Validar datos
+         $validator = Validator::make($request->all(), [
+            'email'     => 'required|email',
+            'password'  => 'required|min:6',
+        ]);
+
+        // Verificar las fallas del validador y devolver respuesta JSON con errores
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 400);
+        }
+
+        // Buscar usuario y obtener el token PAT
+        $user = User::where('email', $request->email)->first();
+        $userId = $user->id;
+        $accessToken = User::find($userId)->tokens()->where('name', 'auth_token')->pluck('token')->first();
+
+        //Retornar los datos de usuario y el token de acceso
+        return response()->json([
+            "user" => $user,
+            "token" => $accessToken
+        ], 201);
+    }
+
+    public function all(){
+        $users = User::all();
+        return response()->json($users);
     }
 }
