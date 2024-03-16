@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('telefono')->unique();
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('imagenes')->nullable();;
+            $table->string('imagene')->nullable();;
             $table->rememberToken();
             $table->timestamps();
         });

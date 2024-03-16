@@ -12,3 +12,4 @@ Route::get('/user', function (Request $request) {
 Route::post('Registro',[AuthController::class, 'registro']); //ENDPOINT Registro = Registrar usuarios
 Route::post('Login',[AuthController::class, 'login']); //ENDPOINT Login = autenticacion de usuarios
 Route::get('All',[AuthController::class,'all']);
+Route::post('Token',[AuthController::class, 'readToken']); //ENDPOINT Token = datos de usuario

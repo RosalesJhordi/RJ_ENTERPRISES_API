@@ -6,14 +6,16 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
     //  Funcion Registro
-    public function registro(Request $request){
+    public function registro(Request $request)
+    {
 
         //Validar los datos obtenidos
-        $validacion = Validator::make($request->all(),[
+        $validacion = Validator::make($request->all(), [
             'nombres'   => 'required',
             'apellidos' => 'required',
             'telefono'  => 'required',
@@ -22,7 +24,7 @@ class AuthController extends Controller
         ]);
 
         //Retornar errores si hay algun error al validar
-        if($validacion->fails()){
+        if ($validacion->fails()) {
             return response()->json($validacion->errors());
         }
 
@@ -34,13 +36,13 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password)
         ]);
-        
+
         //Generar token PAT con laravel SANCTUM
-        $token = $user->createToken('auth_token')->plainTextToken;
-        $user = User::where('email', $request->email)->first();
-        $userId = $user->id;
-        $accessToken = User::find($userId)->tokens()->where('name', 'auth_token')->pluck('token')->first();
-        
+        $token = $user->createToken('auth_token')->plainTextToken; //generar token
+        $user = User::where('email', $request->email)->first(); //buscar usuario por email
+        $userId = $user->id; //id de usuario
+        $accessToken = User::find($userId)->tokens()->where('name', 'auth_token')->pluck('token')->first(); //obtner el usuario desde la bd
+
 
         //Retornar los datos de usuario y el token de acceso
         return response()->json([
@@ -50,9 +52,10 @@ class AuthController extends Controller
     }
 
     //funcion autenticacion de usuarios
-    public function login(Request $request){
-         // Validar datos
-         $validator = Validator::make($request->all(), [
+    public function login(Request $request)
+    {
+        // Validar datos
+        $validator = Validator::make($request->all(), [
             'email'     => 'required|email',
             'password'  => 'required|min:6',
         ]);
@@ -74,8 +77,36 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function all(){
+    //Mostrar todos los usuarios
+    public function all()
+    {
         $users = User::all();
         return response()->json($users);
+    }
+
+    //Obtener datos de usuario con token PAT
+    public function readToken(Request $request)
+    {
+        // Obtener el token PAT del header de autorización
+        $token = $request->bearerToken();
+
+        if (!$token) {
+            return response()->json(['error' => 'Token no proporcionado'], 401);
+        }
+
+        // Buscar el token PAT
+        $pat = PersonalAccessToken::where('token', $token)->first();
+
+        // Verificar si se encontró el token
+        if ($pat) {
+            // Obtener usuaruo con token PAT
+            $user = $pat->tokenable;
+
+            // Devolver datos del usuario
+            return response()->json(['user' => $user], 200);
+        } else {
+            // Si no se encuentra un token
+            return response()->json(['error' => 'Token PAT inválido'], 401);
+        }
     }
 }
